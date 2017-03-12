@@ -1,5 +1,9 @@
+import sys
+
 from django.conf import settings
 from django.core.urlresolvers import Resolver404, get_script_prefix, resolve
+
+from pretix.base.settings import GlobalSettingsObject
 
 from .signals import html_head, nav_event, nav_topbar
 from .utils.i18n import get_javascript_format, get_moment_locale
@@ -45,5 +49,14 @@ def contextprocessor(request):
     ctx['js_datetime_format'] = get_javascript_format('DATETIME_INPUT_FORMATS')
     ctx['js_date_format'] = get_javascript_format('DATE_INPUT_FORMATS')
     ctx['js_locale'] = get_moment_locale()
+
+    ctx['warning_update_available'] = False
+    ctx['warning_update_check_active'] = False
+    if request.user.is_superuser:
+        gs = GlobalSettingsObject()
+        if gs.settings.update_check_result_warning:
+            ctx['warning_update_available'] = True
+        if not gs.settings.update_check_ack and 'runserver' not in sys.argv:
+            ctx['warning_update_check_active'] = True
 
     return ctx
